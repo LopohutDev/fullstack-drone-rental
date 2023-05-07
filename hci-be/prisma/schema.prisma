@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  email    String  @unique
+  hash     String
+  hashedRt String?
+
+  firstName    String?
+  lastName     String?
+  mobileNumber String?
+
+  emailOtp           String   @default("000000")
+  emailOtpExpiration DateTime @default(now())
+  isActive           Boolean  @default(false)
+  Image              Image?   @relation(fields: [imageId], references: [id])
+  imageId            String?
+  Order              Order[]
+}
+
+model Item {
+  id        String   @id @default(uuid())
+  slug      String?  @unique @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String   @unique
+  description String?
+  dateTime    DateTime
+
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
+
+  imageId String?
+  image   Image?  @relation(fields: [imageId], references: [id])
+
+  isActive Boolean @default(false)
+
+  price Int @default(0)
+
+  ItemCategory   ItemCategory? @relation(fields: [itemCategoryId], references: [id])
+  itemCategoryId String?
+}
+
+model Location {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name     String  @unique
+  address1 String
+  address2 String?
+  city     String
+  state    String?
+  country  String
+
+  items   Item[]
+  Image   Image?  @relation(fields: [imageId], references: [id])
+  imageId String?
+}
+
+model Image {
+  id        String     @id @default(uuid())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  storage   String
+  fileName  String
+  mimeType  String
+  type      String
+  User      User[]
+  Item      Item[]
+  Location  Location[]
+}
+
+model ItemCategory {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name    String
+  slug    String  @unique()
+  deleted Boolean @default(false)
+  Item    Item[]
+}
+
+model Order {
+  id          String   @id @default(uuid())
+  orderNumber Int      @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expiredAt   DateTime @default(dbgenerated("NOW() + interval '15minutes'"))
+
+  status     OrderStatus @default(PENDING)
+  type       OrderType   @default(AUTOMATIC)
+  isAccepted Boolean     @default(false)
+
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  quantity Int    @default(0)
+
+  total Int @default(0)
+}
+
+enum OrderStatus {
+  CUSTOM
+  PENDING
+  FAILED
+  EXPIRED
+  COMPLETED
+}
+
+enum OrderType {
+  MANUAL
+  AUTOMATIC
+}
